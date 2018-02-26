@@ -10,7 +10,6 @@ var magenta = "\x1b[35m";
 //Personal
 var apiKey = '';
 var secret = '';
-
 //Customizable logic
 
 /*
@@ -862,4 +861,4 @@ var bailOutReasons = [
     "I'm not an coward..I just don't like to buy low right now..",
     "The cowards sneak to death...The brave live on",
     "Even cowards can endure hardship, only the brave can endure suspense.",
-    "My connection laggy, wi-fi weak, bags are heavy"
+    "My connection laggy, wi-fi weak, bags are heavy"];
