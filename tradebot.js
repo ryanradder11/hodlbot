@@ -11,6 +11,7 @@ var magenta = "\x1b[35m";
 var apiKey = '';
 var secret = '';
 
+
 //Customizable logic
 
 /*
@@ -371,10 +372,11 @@ function calculateWetherToSell() {
     }
 
     //If last candle is below minumum buy.
-    if (candles[candles.length - 1].result < minimumBuyPercentage ) {
+    if (Number(candles[candles.length - 1].result - 100).toFixed(6) < minimumBuyPercentage  && candles[candles.length - 1].result < 0 ) {
 
         passed = false;
-        console.log('We are not dropping by atleast: ' + minimumBuyPercentage + '% not yet selling..');
+        console.log('');
+        console.log('We are not dropping by atleast: ' + minimumBuyPercentage + '%');
     }
 
 
@@ -636,7 +638,7 @@ function priceTick() {
                 body: ''
             };
             request(options, function (error, response, body) {
-                if (error) throw error;
+                if (error) console.log(error);
                 if (!error && response.statusCode === 200) {
 
                     //Log result
@@ -678,7 +680,7 @@ function getAllOrders() {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -716,7 +718,7 @@ function cancelAllOpenPartialOrders() {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -772,7 +774,7 @@ function cancelOrder(orderId) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             console.log('====================================');
