@@ -2,15 +2,18 @@ var request = require('request');
 const crypto = require('crypto');
 var Promise = require("bluebird");
 
-//General
+///General
 var baseUrl = 'https://www.binance.com';
 var red = "\x1b[31m";
 var green = "\x1b[32m";
+var blue = "\x1b[34m";
+var white = "\x1b[37m";
+var yellow  = "\x1b[33m";
 var magenta = "\x1b[35m";
+
 //Personal
 var apiKey = '';
 var secret = '';
-
 
 //Customizable logic
 
@@ -75,7 +78,7 @@ var displayAmountOfCandles = 30;
     How much should you sell per transaction
     Higher is better
  */
-var sellQuantity = 150;
+var sellQuantity = 250;
 
 /*
     How much VEN profit should be made per transaction
@@ -99,7 +102,7 @@ var makeProfitAgainInterval = 30;
 /*
     Minimum percentage of drop to buy on
  */
-var minimumBuyPercentage = -0.4;
+var minimumBuyPercentage = -0.45;
 
 //Logic
 var serverTimeOffset = 0;
@@ -204,16 +207,17 @@ function checkToBuy() {
     //Calculate still needed amount
     var stillNeeded = Number(totalPriceToBuy - balance).toFixed(10);
 
-    var closer = (stillNeeded < lastStillNeeded);
     lastStillNeeded = stillNeeded;
 
     console.log(magenta, (sellQuantity + profitQuantity) + ' VEN costs : ' + totalPriceToBuy);
     console.log(magenta, 'BTC balance: ' + balance);
     console.log(magenta, 'Still needed: ' + stillNeeded);
-    if(closer){
-        console.log('Warmer..');
-    }else {
-        console.log('Colder..');
+
+    if(stillNeeded < lastStillNeeded){
+        console.log(red, 'Warmer..');
+    }
+    if(stillNeeded > lastStillNeeded){
+        console.log(blue, 'Colder..');
     }
     console.log("\x1b[0m", '');
 
@@ -372,11 +376,12 @@ function calculateWetherToSell() {
     }
 
     //If last candle is below minumum buy.
-    if (Number(candles[candles.length - 1].result - 100).toFixed(6) < minimumBuyPercentage  && candles[candles.length - 1].result < 0 ) {
+    if (Number(candles[candles.length - 1].percentage - 100).toFixed(6) > minimumBuyPercentage && passed === true && Number(candles[candles.length - 1].percentage - 100).toFixed(6) < 0 ) {
 
         passed = false;
         console.log('');
         console.log('We are not dropping by atleast: ' + minimumBuyPercentage + '%');
+        console.log('');
     }
 
 
