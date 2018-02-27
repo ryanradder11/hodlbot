@@ -10,13 +10,14 @@ var magenta = "\x1b[35m";
 //Personal
 var apiKey = '';
 var secret = '';
+
 //Customizable logic
 
 /*
     Interval of candles
     This is and value that really
     is worht of expermementing with
-    Enmugs:
+    Enums:
 
         1m
         3m
@@ -29,7 +30,7 @@ var secret = '';
         6h
         8h
 
-        //default 1m
+        //default 15m
 
         Note: this this wil dramanticly affect
         when to engage to sell and enter buy mode
@@ -93,6 +94,11 @@ var $binanceFeeFactor = 1.005;
     In minutes
  */
 var makeProfitAgainInterval = 30;
+
+/*
+    Minimum percentage of drop to buy on
+ */
+var minimumBuyPercentage = -0.4;
 
 //Logic
 var serverTimeOffset = 0;
@@ -171,7 +177,7 @@ function checkToBuyBack() {
     }
 
     //Allow 80% coin loss thereshold
-    if (balanceFreeBtc <= (venPrice * (sellQuantity - 0.8))) {
+    if (balanceFreeBtc <= Number(venPrice * Number(sellQuantity - 0.8).toFixed(12)).toFixed(12)) {
 
         console.log(magenta, '================================================================');
         console.log(magenta, bailOutReasons[getRandomInt(bailOutReasons.length)]);
@@ -322,16 +328,18 @@ function calculateWetherToSell() {
 
     //If last candle is heavy drop
     if ( (candles[candles.length - 1].percentage - 100) <= heavyDropPercentage ) {
-        console.log('=============================');
+        console.log('============================================================  ');
         console.log('Heavy drop measured!');
-        console.log('Lowering max amount of positive candles threshhold');
-        console.log('=============================');
+        console.log('Lowering max amount of positive candles threshhold by: ' + maximumCandlesPositiveExtraForDrop);
+        console.log('=============================================================');
         console.log('');
 
         //Lower positive candles treshold
         extraPositiveCandle = extraPositiveCandle + maximumCandlesPositiveExtraForDrop;
     }
 
+    console.log('positive candles: ' + positiveCandles);
+    console.log('positive candles max: ' + maximumCandlesPositive);
 
     //Add weight for second last candle being an upward trend
     if (candles[candles.length - 2].result > 0 ) {
@@ -347,10 +355,8 @@ function calculateWetherToSell() {
         passed = true
     }
 
-    console.log('positive candles: ' + positiveCandles)
-    console.log('positive candles max: ' + maximumCandlesPositive)
+    //FAILSAFES
 
-    //FAILSAFE
     //If last candle is upward do not buy.
     if (candles[candles.length - 1].result > 0 ) {
 
@@ -362,6 +368,13 @@ function calculateWetherToSell() {
 
         console.log('Preventing sell lock...');
         passed = false;
+    }
+
+    //If last candle is below minumum buy.
+    if (candles[candles.length - 1].result < minimumBuyPercentage ) {
+
+        passed = false;
+        console.log('We are not dropping by atleast: ' + minimumBuyPercentage + '% not yet selling..');
     }
 
 
@@ -399,7 +412,7 @@ function buy(quantity) {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -450,7 +463,7 @@ function getActiveOrderStatus() {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -539,7 +552,7 @@ function sell() {
     request(options, function (error, response, body) {
         if (error) {
             sold = false;
-            throw error;
+            console.log(error);
         }
         if (!error && response.statusCode === 200) {
 
@@ -576,7 +589,7 @@ function get24hrChange() {
         body: ''
     };
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -787,7 +800,7 @@ function getAccountBalance() {
         }
     };
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
 
             var result = JSON.parse(body);
@@ -835,7 +848,7 @@ function getServerTimeOffset() {
     };
 
     request(options, function (error, response, body) {
-        if (error) throw error;
+        if (error) console.log(error);
         if (!error && response.statusCode === 200) {
             var result = JSON.parse(body);
 
