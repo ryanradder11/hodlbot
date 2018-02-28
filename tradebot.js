@@ -119,7 +119,7 @@ var makeProfitAgainInterval = 30;
 /*
     Minimum percentage of drop to buy on
  */
-var minimumBuyPercentage = -0.55;
+var minimumBuyPercentage = -0.50;
 
 //Logic
 var serverTimeOffset = 0;
@@ -140,7 +140,6 @@ var buying = false;
 var madeBuyOrderDate = null;
 var lastStillNeeded = 0;
 var performingDetailedAnalysis = false;
-
 
 init();
 
@@ -459,7 +458,7 @@ function detailedAnalysis() {
                     var open = parseFloat(result[i][1]).toFixed(14);
                     var close = parseFloat(result[i][4]).toFixed(14);
                     var closeTime = result[i][6];
-                    var closeDate = new Date(closeTime + ( 3600000 + serverTimeOffset ).toTimeString();
+                    var closeDate = new Date(closeTime + ( 3600000 + serverTimeOffset )).toTimeString();
 
                     var difference = Number(close - open).toFixed(10);
                     var percentage = Number((close / open) * 100).toFixed(4);
