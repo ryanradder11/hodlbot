@@ -290,7 +290,7 @@ function getCandleSticks(time) {
                     var open = parseFloat(result[i][1]).toFixed(14);
                     var close = parseFloat(result[i][4]).toFixed(14);
                     var closeTime = result[i][6];
-                    var closeDate = new Date(closeTime + 3600000).toTimeString();
+                    var closeDate = new Date(closeTime +  3600000 + serverTimeOffset ).toTimeString();
 
                     var difference = Number(close - open).toFixed(10);
                     var percentage = Number((close / open) * 100).toFixed(4);
@@ -459,7 +459,7 @@ function detailedAnalysis() {
                     var open = parseFloat(result[i][1]).toFixed(14);
                     var close = parseFloat(result[i][4]).toFixed(14);
                     var closeTime = result[i][6];
-                    var closeDate = new Date(closeTime + 3600000).toTimeString();
+                    var closeDate = new Date(closeTime + ( 3600000 + serverTimeOffset ).toTimeString();
 
                     var difference = Number(close - open).toFixed(10);
                     var percentage = Number((close / open) * 100).toFixed(4);
