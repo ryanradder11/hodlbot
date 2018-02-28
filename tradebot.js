@@ -52,11 +52,23 @@ var candlesInterval = '15m';
 var candlesToCheck = 10;
 
 /*
+    How many detailed candles should be checked
+ */
+var candlesDetailedToCheck = 5;
+
+/*
     How many candles can be positive?
     If there are less green candles then this it will sell
     Should be less then CandlesToCheck
  */
 var maximumCandlesPositive = 3;
+
+/*
+    How many candles can be positive?
+    If there are less green candles then this it will sell
+    Should be less then CandlesToCheck
+ */
+var maximumDetailedCandlesPositive = 2;
 
 /*
     If the last x candles are heavy drops
@@ -73,6 +85,11 @@ var heavyDropPercentage = -1.25;
     How many candles should be displayed on screen
  */
 var displayAmountOfCandles = 30;
+
+/*
+    How many candles should be displayed on screen
+ */
+var displayAmountOfDetailedCandles = 10;
 
 /*
     How much should you sell per transaction
@@ -102,7 +119,7 @@ var makeProfitAgainInterval = 30;
 /*
     Minimum percentage of drop to buy on
  */
-var minimumBuyPercentage = -0.45;
+var minimumBuyPercentage = -0.55;
 
 //Logic
 var serverTimeOffset = 0;
@@ -121,7 +138,9 @@ var activeOrderPending = false;
 var buyback = false;
 var buying = false;
 var madeBuyOrderDate = null;
-var lastStillNeeded= 0;
+var lastStillNeeded = 0;
+var performingDetailedAnalysis = false;
+
 
 init();
 
@@ -189,7 +208,7 @@ function checkToBuyBack() {
         console.log("\x1b[0m", '');
 
         buyback = true;
-        buy( (sellQuantity - 1) );
+        buy((sellQuantity - 1));
     }
 }
 
@@ -207,19 +226,20 @@ function checkToBuy() {
     //Calculate still needed amount
     var stillNeeded = Number(totalPriceToBuy - balance).toFixed(10);
 
-    lastStillNeeded = stillNeeded;
 
     console.log(magenta, (sellQuantity + profitQuantity) + ' VEN costs : ' + totalPriceToBuy);
     console.log(magenta, 'BTC balance: ' + balance);
     console.log(magenta, 'Still needed: ' + stillNeeded);
 
-    if(stillNeeded < lastStillNeeded){
+    if (stillNeeded < lastStillNeeded) {
         console.log(red, 'Warmer..');
     }
-    if(stillNeeded > lastStillNeeded){
+    if (stillNeeded > lastStillNeeded) {
         console.log(blue, 'Colder..');
     }
     console.log("\x1b[0m", '');
+
+    lastStillNeeded = stillNeeded;
 
     //If we can buy
     if (balance >= totalPriceToBuy) {
@@ -242,7 +262,11 @@ function getCandleSticks(time) {
         time = candlesInterval;
     }
 
-    console.log("\x1b[36m", 'Retrieving candle stick data:');
+    if (performingDetailedAnalysis === true) {
+        return;
+    }
+
+    console.log("\x1b[36m", 'Retrieving ' + candlesInterval + ' candle stick data:');
 
     var options = {
         url: baseUrl + '/api/v1/klines?symbol=VENBTC&interval=' + time,
@@ -283,8 +307,8 @@ function getCandleSticks(time) {
 
                     var color = (close >= open) ? green : red;
 
-                    if ( i === (result.length - candlesToCheck ) ) {
-                        console.log('==> ' );
+                    if (i === (result.length - candlesToCheck)) {
+                        console.log('==> ');
                     }
 
                     //Log result
@@ -305,11 +329,11 @@ function getCandleSticks(time) {
 function calculateWetherToSell() {
 
     //If we previously made profit
-    if(madeBuyOrderDate){
+    if (madeBuyOrderDate) {
 
         var currentDate = new Date();
-        var minutesEarlierFromNow = new Date(currentDate.getTime() - ( makeProfitAgainInterval * 60 * 1000));
-        if(minutesEarlierFromNow < madeBuyOrderDate){
+        var minutesEarlierFromNow = new Date(currentDate.getTime() - (makeProfitAgainInterval * 60 * 1000));
+        if (minutesEarlierFromNow < madeBuyOrderDate) {
             console.log('===============================');
             console.log('We recently made an buy order');
             console.log('Waiting..');
@@ -332,7 +356,7 @@ function calculateWetherToSell() {
     }
 
     //If last candle is heavy drop
-    if ( (candles[candles.length - 1].percentage - 100) <= heavyDropPercentage ) {
+    if ((candles[candles.length - 1].percentage - 100) <= heavyDropPercentage) {
         console.log('============================================================  ');
         console.log('Heavy drop measured!');
         console.log('Lowering max amount of positive candles threshhold by: ' + maximumCandlesPositiveExtraForDrop);
@@ -346,8 +370,9 @@ function calculateWetherToSell() {
     console.log('positive candles: ' + positiveCandles);
     console.log('positive candles max: ' + maximumCandlesPositive);
 
-    //Add weight for second last candle being an upward trend
-    if (candles[candles.length - 2].result > 0 ) {
+    // Add weight for second last candle being an upward trend
+    // Replaced for not buying at all
+    if (candles[candles.length - 2].result > 0) {
 
         console.log('2nd last is positive + 1');
         extraPositiveCandle = extraPositiveCandle - 1;
@@ -360,23 +385,24 @@ function calculateWetherToSell() {
         passed = true
     }
 
-    //FAILSAFES
+    //If second last candle is positive do not buy
+    if (candles[candles.length - 2].result > 0 && passed === true) {
 
-    //If last candle is upward do not buy.
-    if (candles[candles.length - 1].result > 0 ) {
-
+        console.log('2nd last is positive not buying');
         passed = false;
     }
 
+    //FAILSAFES
+
     //Prevent buy lock in case of all positive candles
-    if(positiveCandles >= (candlesToCheck - 1) ){
+    if (positiveCandles >= (candlesToCheck - 1)) {
 
         console.log('Preventing sell lock...');
         passed = false;
     }
 
     //If last candle is below minumum buy.
-    if (Number(candles[candles.length - 1].percentage - 100).toFixed(6) > minimumBuyPercentage && passed === true && Number(candles[candles.length - 1].percentage - 100).toFixed(6) < 0 ) {
+    if (Number(candles[candles.length - 1].percentage - 100).toFixed(6) > minimumBuyPercentage && passed === true && Number(candles[candles.length - 1].percentage - 100).toFixed(6) < 0) {
 
         passed = false;
         console.log('');
@@ -384,19 +410,130 @@ function calculateWetherToSell() {
         console.log('');
     }
 
-
     //TODO add depth charth analysis
 
     //If not sold and check failed
     if (true === passed && false === sold) {
 
-        sell();
+        detailedAnalysis();
     } else {
 
         //Do nothing
         console.log('Hodling on.')
         console.log("\x1b[0m", '');
     }
+}
+
+
+function detailedAnalysis() {
+
+    performingDetailedAnalysis = true;
+
+    console.log("\x1b[36m", 'Retrieving detailed 1m candle stick data:');
+
+    var options = {
+        url: baseUrl + '/api/v1/klines?symbol=VENBTC&interval=1m',
+        method: 'GET',
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: ''
+    };
+
+    var detailedCandles = [];
+
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+            performingDetailedAnalysis = false;
+        }
+        if (!error && response.statusCode === 200) {
+
+            var result = JSON.parse(body);
+
+            for (var i = result.length - displayAmountOfDetailedCandles; i < result.length; i++) {
+
+                if (result[i] !== null) {
+
+                    var openTime = result[i][0];
+                    var open = parseFloat(result[i][1]).toFixed(14);
+                    var close = parseFloat(result[i][4]).toFixed(14);
+                    var closeTime = result[i][6];
+                    var closeDate = new Date(closeTime + 3600000).toTimeString();
+
+                    var difference = Number(close - open).toFixed(10);
+                    var percentage = Number((close / open) * 100).toFixed(4);
+                    var plusIndicator = (difference >= 0) ? '+' : '';
+
+                    var detailedCandle = {
+                        "openTime": openTime,
+                        "open": open,
+                        "close": close,
+                        "closeTime": closeTime,
+                        "result": difference,
+                        "percentage": percentage
+                    };
+
+                    var color = (close >= open) ? green : red;
+
+                    if (i === (result.length - candlesDetailedToCheck)) {
+                        console.log('==> ');
+                    }
+
+                    //Log result
+                    console.log(color, 'Open: ' + Number(open).toFixed(10) + ' | Close: ' + Number(close).toFixed(10) + ' | Difference: ' + plusIndicator + '' + difference + ' | Percentage: ' + plusIndicator + '' + Number(percentage - 100).toFixed(6) + '%' + ' | Time: ' + closeDate);
+
+                    detailedCandles.push(detailedCandle);
+                }
+            }
+            console.log("\x1b[0m", '');
+
+            var detailedCheckPassed = false;
+            var positiveDetailedCandles = 0;
+            var extraPositiveDetailedCandles = 0;
+
+            //Count positive candles
+            for (var y = (detailedCandles.length - candlesDetailedToCheck); y < detailedCandles.length; y++) {
+
+                if (detailedCandles[y].result >= 0) {
+                    positiveDetailedCandles++;
+                }
+            }
+
+            // Add weight for second last candle being an upward trend
+            // Replaced for not buying at all
+            if (candles[candles.length - 2].result > 0) {
+
+                console.log('2nd last is positive + 1');
+                extraPositiveDetailedCandles = extraPositiveDetailedCandles - 1;
+            }
+
+            //Pass if positive candles is below threshold
+            if (positiveDetailedCandles <= (maximumDetailedCandlesPositive + extraPositiveDetailedCandles)) {
+
+                console.log('Passed detailed check');
+                detailedCheckPassed = true
+            }
+
+            //If last candle is upward do not buy.
+            if (detailedCandles[detailedCandles.length - 1].result > 0) {
+
+                detailedCheckPassed = false;
+            }
+
+            if (detailedCheckPassed === true) {
+
+                console.log('Sell9ng!!');
+                sell();
+                performingDetailedAnalysis = false;
+            }
+
+        } else {
+            performingDetailedAnalysis = false;
+        }
+    });
+
+    performingDetailedAnalysis = false;
 }
 
 
