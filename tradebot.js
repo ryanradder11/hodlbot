@@ -522,7 +522,6 @@ function detailedAnalysis() {
 
             if (detailedCheckPassed === true) {
 
-                console.log('Sell9ng!!');
                 sell();
                 performingDetailedAnalysis = false;
             }
@@ -592,6 +591,10 @@ function buy(quantity) {
 
 function getActiveOrderStatus() {
 
+    if(activeOrderId === null){
+        return;
+    }
+
     var query = 'symbol=VENBTC&orderId=' + activeOrderId + '&timestamp=' + getTimestamp();
     var hash = crypto.createHmac('sha256', secret).update(query).digest('hex');
     var queryBody = query + '&signature=' + hash;
@@ -646,6 +649,7 @@ function getActiveOrderStatus() {
                     sold = false;
                     buyback = false;
                     activeOrderPending = false;
+                    activeOrderId = null;
                 }
 
                 if ('SELL' === side) {
@@ -657,6 +661,7 @@ function getActiveOrderStatus() {
 
                     //Enter 2nd stage of buying fase
                     activeOrderPending = false;
+                    activeOrderId = null;
                 }
             }
 
@@ -677,8 +682,9 @@ function sell() {
         return;
     }
 
+    activeOrderPending = true;
+
     console.log('selling! ' + sellQuantity + ' VEN');
-    sold = true;
 
     var query = 'symbol=VENBTC&side=SELL&type=MARKET&quantity=' + sellQuantity + '&timestamp=' + getTimestamp();
     var hash = crypto.createHmac('sha256', secret).update(query).digest('hex');
@@ -695,6 +701,7 @@ function sell() {
     request(options, function (error, response, body) {
         if (error) {
             sold = false;
+            activeOrderPending = false;
             console.log(error);
         }
         if (!error && response.statusCode === 200) {
@@ -710,9 +717,11 @@ function sell() {
             //Wait for order
             activeOrderId = result.orderId;
             activeOrderPending = true;
+            sold = true;
 
         } else {
             console.log(body);
+            activeOrderPending = false;
             sold = false;
         }
     });
