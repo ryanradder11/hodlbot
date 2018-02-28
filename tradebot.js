@@ -140,6 +140,8 @@ var buying = false;
 var madeBuyOrderDate = null;
 var lastStillNeeded = 0;
 var performingDetailedAnalysis = false;
+var errorOccured = false;
+var buyLoopNmbr;
 
 init();
 
@@ -170,6 +172,14 @@ function sellModeTick() {
 }
 
 function buyModeTick() {
+
+    //Bad connection slowdown
+    buyLoopNmbr++;
+    if(errorOccured){
+        if(buyLoopNmbr % 4 !== 0){
+            return ;
+        }
+    }
 
     if (sold) {
 
@@ -276,7 +286,11 @@ function getCandleSticks(time) {
         body: ''
     };
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+          console.log(error);
+          errorOccured = true;
+
+        }
         if (!error && response.statusCode === 200) {
 
             var result = JSON.parse(body);
@@ -444,6 +458,7 @@ function detailedAnalysis() {
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
+            errorOccured = true;
             performingDetailedAnalysis = false;
         }
         if (!error && response.statusCode === 200) {
@@ -554,7 +569,10 @@ function buy(quantity) {
     };
 
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -609,7 +627,10 @@ function getActiveOrderStatus() {
     };
 
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -702,6 +723,7 @@ function sell() {
         if (error) {
             sold = false;
             activeOrderPending = false;
+            errorOccured = true;
             console.log(error);
         }
         if (!error && response.statusCode === 200) {
@@ -770,7 +792,10 @@ function priceTick() {
         body: ''
     };
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             var result = JSON.parse(body);
@@ -830,7 +855,10 @@ function getAllOrders() {
     };
 
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -868,7 +896,10 @@ function cancelAllOpenPartialOrders() {
     };
 
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             //Log result
@@ -952,7 +983,10 @@ function getAccountBalance() {
         }
     };
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
 
             var result = JSON.parse(body);
@@ -1000,7 +1034,10 @@ function getServerTimeOffset() {
     };
 
     request(options, function (error, response, body) {
-        if (error) console.log(error);
+        if (error) {
+            console.log(error);
+            errorOccured = true;
+        }
         if (!error && response.statusCode === 200) {
             var result = JSON.parse(body);
 
