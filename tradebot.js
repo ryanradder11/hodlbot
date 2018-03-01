@@ -153,7 +153,7 @@ var buyLoopNmbr;
 init();
 
 setInterval(sellModeTick, 3000);
-setInterval(buyModeTick, 1000 * 10);
+setInterval(buyModeTick, 1500);
 setInterval(getServerTimeOffset, 60000);
 
 function init() {
@@ -224,7 +224,7 @@ function checkToBuyBack() {
         console.log("\x1b[0m", '');
 
         buyback = true;
-        buy((sellQuantity - 1));
+        buy( sellQuantity - Math.floor(acceptableloss) );
     }
 }
 
