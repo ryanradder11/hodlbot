@@ -54,7 +54,7 @@ var candlesToCheck = 10;
 /*
     How many detailed candles should be checked
  */
-var candlesDetailedToCheck = 5;
+var candlesDetailedToCheck = 6;
 
 /*
     How many candles can be positive?
@@ -107,6 +107,13 @@ var profitQuantity = 1;
     Binance fee per transaction
     1.005 = 0.050%
  */
+
+/*
+    Acceptable loss
+    in amount of coins
+ */
+var acceptableloss = 2;
+
 var $binanceFeeFactor = 1.005;
 
 /*
@@ -146,7 +153,7 @@ var buyLoopNmbr;
 init();
 
 setInterval(sellModeTick, 3000);
-setInterval(buyModeTick, 1000);
+setInterval(buyModeTick, 1000 * 10);
 setInterval(getServerTimeOffset, 60000);
 
 function init() {
@@ -175,8 +182,8 @@ function buyModeTick() {
 
     //Bad connection slowdown
     buyLoopNmbr++;
-    if(errorOccured){
-        if(buyLoopNmbr % 4 !== 0){
+    if(errorOccured === true){
+        if(buyLoopNmbr % 2 === 0){
             return ;
         }
     }
@@ -208,8 +215,8 @@ function checkToBuyBack() {
         return;
     }
 
-    //Allow 80% coin loss thereshold
-    if (balanceFreeBtc <= Number(venPrice * Number(sellQuantity - 0.8).toFixed(12)).toFixed(12)) {
+    //Allow 150% coin loss thereshold
+    if (balanceFreeBtc <= Number(venPrice * Number(sellQuantity - acceptableloss).toFixed(12)).toFixed(12)) {
 
         console.log(magenta, '================================================================');
         console.log(magenta, bailOutReasons[getRandomInt(bailOutReasons.length)]);
@@ -287,8 +294,8 @@ function getCandleSticks(time) {
     };
     request(options, function (error, response, body) {
         if (error) {
-          console.log(error);
-          errorOccured = true;
+            console.log(error);
+            errorOccured = true;
 
         }
         if (!error && response.statusCode === 200) {
@@ -385,7 +392,7 @@ function calculateWetherToSell() {
 
     // Add weight for second last candle being an upward trend
     // Replaced for not buying at all
-    if (candles[candles.length - 2].result > 0) {
+    if (candles[candles.length - 2].result >= 0) {
 
         console.log('2nd last is positive + 1');
         extraPositiveCandle = extraPositiveCandle - 1;
@@ -398,12 +405,6 @@ function calculateWetherToSell() {
         passed = true
     }
 
-    //If second last candle is positive do not buy
-    if (candles[candles.length - 2].result > 0 && passed === true) {
-
-        console.log('2nd last is positive not buying');
-        passed = false;
-    }
 
     //FAILSAFES
 
@@ -422,6 +423,13 @@ function calculateWetherToSell() {
         console.log('We are not dropping by atleast: ' + minimumBuyPercentage + '%');
         console.log('');
     }
+
+    // Replaced for not buying at all
+    if (candles[candles.length - 1].result >= 0) {
+
+        passed = false;
+    }
+
 
     //TODO add depth charth analysis
 
@@ -462,6 +470,12 @@ function detailedAnalysis() {
             performingDetailedAnalysis = false;
         }
         if (!error && response.statusCode === 200) {
+
+            console.log('');
+            console.log('======================');
+            console.log('Detailed candles:');
+            console.log('======================');
+            console.log('');
 
             var result = JSON.parse(body);
 
@@ -516,7 +530,7 @@ function detailedAnalysis() {
 
             // Add weight for second last candle being an upward trend
             // Replaced for not buying at all
-            if (candles[candles.length - 2].result > 0) {
+            if (detailedCandles[detailedCandles.length - 2].result > 0) {
 
                 console.log('2nd last is positive + 1');
                 extraPositiveDetailedCandles = extraPositiveDetailedCandles - 1;
@@ -530,7 +544,7 @@ function detailedAnalysis() {
             }
 
             //If last candle is upward do not buy.
-            if (detailedCandles[detailedCandles.length - 1].result > 0) {
+            if (detailedCandles[detailedCandles.length - 1].result >= 0) {
 
                 detailedCheckPassed = false;
             }
